@@ -1,0 +1,42 @@
+.content__wrapper {
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: #fff;
+    height: 90vh;
+}
+
+.title__container {
+    position: absolute;
+    bottom: 4.5rem;
+    left: 0;
+    width: 100%;
+}
+
+.title__wrapper {
+    width: 80%;
+    margin: auto;
+}
+
+.title__wrapper > h1 {
+    font-size: 80px;
+    text-align: start;
+}
+
+@media screen and (max-width: 960px) {
+
+    .title__container, .title__wrapper {
+        all: unset;
+    }
+    
+    .content__wrapper {
+        height: 40vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .title__wrapper > h1 {
+        font-size: 60px;
+    }
+}
