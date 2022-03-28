@@ -1,6 +1,5 @@
 import React from 'react'
-import BookForms from './../../forms/BookForms'
-import BuyerForm from './../../forms/BuyerForm'
+import BookForms from './../forms/BookForms'
 import LandingTitle from './../LandingTitle'
 
 function Bookings() {

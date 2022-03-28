@@ -1,7 +1,7 @@
 import React from 'react'
 // import { Form, FormGroup, Label, Input, FormFeedback, FormText } from 'reactstrap'
-import '../../static/css/Forms.css'
-import useForm from './../components/hooks/useFormBuyer'
+import '../../../static/css/Forms.css'
+import useForm from './../hooks/useFormBuyer'
 import validateBuyer from './validateInfoBuyer'
 
 function BuyerForm({ submitForm }) {

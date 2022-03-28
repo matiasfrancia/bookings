@@ -1,25 +1,33 @@
 from rest_framework import serializers
 
-from .models import Booking, Buyer
+from .models import Booking, DisabledBlocks, DisabledDays
 
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = '__all__'
 
-    # TODO: add the foreign key field 
-
 class CreateBookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
-        fields = ('booking_date', 'block', 'visitants', 'price', 'buyer')
+        fields = ('booking_date', 'name', 'email', 'block', 'visitants', 'price')
 
-class BuyerSerializer(serializers.ModelSerializer):
+class DisabledBlocksSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Buyer
+        model = DisabledBlocks
         fields = '__all__'
 
-class CreateBuyerSerializer(serializers.ModelSerializer):
+class CreateDisabledBlocksSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Buyer
-        fields = ('name', 'rut', 'email')
+        model = DisabledBlocks
+        fields = '__all__'
+
+class DisabledDaysSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DisabledDays
+        fields = '__all__'
+
+class CreateDisabledDaysSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DisabledDays
+        fields = '__all__'

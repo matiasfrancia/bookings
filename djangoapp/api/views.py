@@ -1,10 +1,18 @@
-from email.policy import HTTP
-from django.http import HttpResponse
 from django.shortcuts import render
 from rest_framework import generics, status
+from django.utils.dateparse import parse_date
 
-from .models import Booking, Buyer
-from .serializers import BookingSerializer, BuyerSerializer, CreateBookingSerializer, CreateBuyerSerializer
+from .models import Booking, DisabledBlocks, DisabledDays
+from .serializers import (
+    BookingSerializer, 
+    CreateBookingSerializer, 
+    CreateDisabledBlocksSerializer,
+    CreateDisabledDaysSerializer, 
+    DisabledBlocksSerializer, 
+    CreateDisabledDaysSerializer, 
+    DisabledDays, 
+    DisabledDaysSerializer
+)
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -15,10 +23,26 @@ class ListBookingView(generics.ListAPIView):
     serializer_class = BookingSerializer
 
 
+class ListDisabledBlockView(generics.ListAPIView):
+    serializer_class = DisabledBlocksSerializer
+
+    def get_queryset(self):
+        print(self.kwargs['day'])
+        queryset = DisabledBlocks.objects.filter(day=self.kwargs['day'])
+        return queryset
+
+
+class ListDisabledDayView(generics.ListAPIView):
+    queryset = DisabledDays.objects.all()
+    serializer_class = DisabledDaysSerializer
+
+
 class CreateBookingView(APIView):
     serializer_class = CreateBookingSerializer
 
     def post(self, request, format=None):
+
+        print(request.data)
         
         serializer = self.serializer_class(data=request.data)
 
@@ -27,45 +51,67 @@ class CreateBookingView(APIView):
             block = serializer.data.get('block')
             visitants = serializer.data.get('visitants')
             price = serializer.data.get('price')
-            buyer = Buyer.objects.get(id=serializer.data.get('buyer'))
+            name = serializer.data.get('name')
+            email = serializer.data.get('email')
+
+            print("Booking date: " + booking_date)
 
             queryset = Booking.objects.filter(booking_date=booking_date, block=block)
             
             if queryset.exists():
                 return Response(data="Ya existe una reserva en ese día y bloque", status=status.HTTP_226_IM_USED)
             else:
-                booking = Booking(booking_date=booking_date, block=block, visitants=visitants, price=price, buyer=buyer)
+                disabled_blocks = DisabledBlocks.objects.create(day=booking_date, block=block)
+                print(disabled_blocks)
+                booking = Booking(booking_date=booking_date, block=block, visitants=visitants, price=price, name=name, email=email)
                 booking.save()
                 
                 return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
 
-        return HttpResponse("<h2>There was an error in the creation of the booking<h2>")
+        return Response(data="There was an error in the creation of the booking", status=status.HTTP_400_BAD_REQUEST)
 
 
-class ListBuyerView(generics.ListAPIView):
-    queryset = Buyer.objects.all()
-    serializer_class = BuyerSerializer
-
-
-class CreateBuyerView(APIView):
-    serializer_class = CreateBuyerSerializer
+class CreateDisabledDaysView(APIView):
+    serializer_class = CreateDisabledDaysSerializer
 
     def post(self, request, format=None):
-        
+
         serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
-            name = serializer.data.get('name')
-            rut = serializer.data.get('rut')
-            email = serializer.data.get('email')
-
-            queryset = Buyer.objects.filter(rut=rut)
+            day = serializer.data.get('day')
+            queryset = DisabledDays.objects.filter(day=day)
             
             if queryset.exists():
-                return Response(status=status.HTTP_226_IM_USED)
+                return Response(data="Ya existe una reserva en ese día y bloque", status=status.HTTP_226_IM_USED)
             else:
-                buyer = Buyer(name=name, rut=rut, email=email)
-                buyer.save()
+                disabled_day = DisabledDays(day=day)
+                disabled_day.save()
                 
-                return Response(BuyerSerializer(buyer).data, status=status.HTTP_201_CREATED)
+                return Response(DisabledDaysSerializer(disabled_day).data, status=status.HTTP_201_CREATED)
 
+        return Response(data="There was an error in the creation of the disabled day", status=status.HTTP_400_BAD_REQUEST)
+
+
+class CreateDisabledBlocksView(APIView):
+    serializer_class = CreateDisabledBlocksSerializer
+
+    def post(self, request, format=None):
+
+        serializer = self.serializer_class(data=request.data)
+
+        if serializer.is_valid():
+            day = serializer.data.get('day')
+            block = serializer.data.get('block')
+
+            queryset = DisabledBlocks.objects.filter(day=day, block=block)
+            
+            if queryset.exists():
+                return Response(data="Ya existe una reserva en ese día y bloque", status=status.HTTP_226_IM_USED)
+            else:
+                disabled_blocks = DisabledBlocks(day=day, block=block)
+                disabled_blocks.save()
+                
+                return Response(DisabledBlocksSerializer(disabled_blocks).data, status=status.HTTP_201_CREATED)
+
+        return Response(data="There was an error in the creation of the disabled blocks", status=status.HTTP_400_BAD_REQUEST)
