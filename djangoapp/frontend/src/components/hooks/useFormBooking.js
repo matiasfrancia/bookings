@@ -5,44 +5,44 @@ const useFormBooking = (callback, validate) => {
     const [values, setValues] = useState({
         booking_date: new Date(),
         visitants: 0,
-        block: 0,
+        block: "",
         price: 100000
     });
     
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [availableBlocks, setAvailableBlocks] = useState({});
+    const [availableBlocks, setAvailableBlocks] = useState([]);
+    const [disabledBlocks, setDisabledBlocks] = useState([]);
 
     useEffect(() => {
-        console.log("Available blocks");
-        console.log(availableBlocks);
-    }, [availableBlocks]);
+        getAvailableBlocks();
+    }, [disabledBlocks]);
 
     useEffect(() => {
         getDisabledBlocks(new Date());
     }, []);
 
-    function getAvailableBlocks(disabledBlocks) {
-        var blocks = {1: "8:00-9:50", 2: "10:00-11:50", 3: "12:00-13:50", 4: "16:00-17:50"}
+    function getAvailableBlocks() {
+        const blocks = ["8:00-9:50", "10:00-11:50", "12:00-13:50", "16:00-17:50"];
 
-        for(var i = 1; i < Object.keys(blocks).length + 1; i++) {
-            if(disabledBlocks.some(e => e.block === i)) {
-                delete blocks[i];
-            }
-        }
+        var auxList1 = Object.values(blocks);
+        var auxList2 = disabledBlocks.map(disabledBlock => disabledBlock.block);
+        var res = auxList1.filter(block => !auxList2.includes(block));
 
-        setAvailableBlocks(blocks);
+        setAvailableBlocks(res);
     }
 
     const getDisabledBlocks = async (day) => {
 
         try {
   
-          let res = await fetch("http://localhost:8000/api/disabled-blocks/" + day.toISOString().split('T')[0], {
+          let res = await fetch("http://localhost:8000/api/disabled-blocks?day=" + day.toISOString().split('T')[0], {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-          }).then(response => response.json())
-          .then(response => getAvailableBlocks(response))
+          }).then(response => {
+              return response.status !== 404 ? response.json() : []
+            })
+          .then(response => setDisabledBlocks(response))
           .catch(error => console.log(error));
           
         } catch (err) {
@@ -52,6 +52,7 @@ const useFormBooking = (callback, validate) => {
 
     const handleChange = e => {
         const {name, value} = e.target
+        console.log(name + ": " + value);
         setValues({
             ...values,
             [name]: parseInt(value)
@@ -65,6 +66,14 @@ const useFormBooking = (callback, validate) => {
             ["booking_date"]: value
         });
         getDisabledBlocks(value);
+    }
+    
+    function handleBlockChange(value) {
+        console.log("Cambio en block: " + value);
+        setValues({
+            ...values,
+            ["block"]: value
+        });
     }
     
     const handleSubmit = e => {
@@ -81,7 +90,7 @@ const useFormBooking = (callback, validate) => {
         }
     }, [errors]);
 
-    return {handleChange, handleCalendarChange, values, handleSubmit, errors, availableBlocks};
+    return {handleChange, handleCalendarChange, handleBlockChange, values, handleSubmit, errors, availableBlocks};
 };
 
 export default useFormBooking;

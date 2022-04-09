@@ -4,20 +4,27 @@ import validateBooking from './validateInfoBooking'
 import useFormBooking from './../hooks/useFormBooking'
 
 import Calendar from 'react-calendar'
-import 'react-calendar/dist/Calendar.css';
-import { differenceInCalendarDays } from 'date-fns';
+import 'react-calendar/dist/Calendar.css'
+import { differenceInCalendarDays } from 'date-fns'
+
+import {ButtonGroup, Button} from 'reactstrap'
 
 
 function BookingForm({ submitForm }) {
 
-    const {handleChange, handleCalendarChange, values, 
-        handleSubmit, errors, availableBlocks} = useFormBooking(submitForm, validateBooking);
+    const {
+        handleChange, 
+        handleCalendarChange, 
+        handleBlockChange,
+        values, 
+        handleSubmit, 
+        errors, 
+        availableBlocks
+    } = useFormBooking(submitForm, validateBooking);
 
     const [date, setDate] = useState(new Date());
-    // const [disabledBlocks, setDisabledBlocks] = useState([]);
-
-    // Hay que entregarle una lista con los días que van a estar bloqueadas las reservas en formato List<Date>
     const [disabledDates, setDisabledDates] = useState([]);
+    const [block, setBlock] = useState("");
 
     useEffect(() => {
         console.log(disabledDates);
@@ -28,14 +35,30 @@ function BookingForm({ submitForm }) {
         console.log(disabledDates);
     }, []);
 
-    const getDisabledDates = async (day) => {
+    useEffect(() => {
+        handleCalendarChange(date);
+    }, [date]);
+
+    useEffect(() => {
+        handleBlockChange(block);
+    }, [block]);
+
+    function convertStringstoDates(strDates) {
+        return strDates.map(strDate => {
+            console.log("StrDate: " + strDate.day);
+            var [year, month, day] = strDate.day.split('-');
+            return new Date(year, month-1, day);
+        });
+    }
+
+    const getDisabledDates = async () => {
         try {
     
             let res = await fetch("http://localhost:8000/api/disabled-days/", {
                 method: "GET",
                 headers: {"Content-Type": "application/json"},
             }).then(response => response.json())
-            .then(response => setDisabledDates(response))
+            .then(response => setDisabledDates(convertStringstoDates(response)))
             .catch(error => console.log(error));
         
         } catch (err) {
@@ -44,6 +67,9 @@ function BookingForm({ submitForm }) {
     }
         
     function isSameDay(a, b) {
+        if(differenceInCalendarDays(a, b) === 0) {
+            console.log("Son iguales!!");
+        }
         return differenceInCalendarDays(a, b) === 0;
     }
 
@@ -52,43 +78,10 @@ function BookingForm({ submitForm }) {
             return disabledDates.find(dDate => isSameDay(dDate, date));
         }
     }
-
-    useEffect(() => {
-        handleCalendarChange(date);
-    }, [date]);
     
     function handleCalendar(newDate) {
         setDate(newDate);
     }
-
-    /* Clickeamos el día del calendario, se genera una query que busca en la bd si hay algun bloque ocupado aquel día
-        de ser así, se renderizan los que están disponibles en pantalla */
-
-    /* useEffect(() => {
-        if (blocks !== null) {
-            console.log(disabledBlocks);
-        }
-    }, [disabledBlocks]);
-
-    const availableBlocks = async (day) => {
-
-        try {
-          let bodyDict = {
-            day: day
-          };
-  
-          let res = await fetch("http://localhost:8000/api/get-blocks/", {
-            method: "GET",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(bodyDict),
-          }).then(response => response.json())
-          .then(response => setDisabledBlocks(response))
-          .catch(error => console.log(error));
-          
-        } catch (err) {
-          console.log(err);
-        }
-    } */
 
     return (
         <div className='form__container'>
@@ -127,14 +120,23 @@ function BookingForm({ submitForm }) {
                 <div className='form__inputs'>
                     <label htmlFor='block' className='form__label'>
                         Bloque
-                    </label>
-                    <select 
-                        className='select__input'
-                        name='block'
-                        onChange={handleChange}
-                    >
-                        {Object.keys(availableBlocks).map((key) => <option key={key}>{availableBlocks[key]}</option>)}
-                    </select>
+                    </label><p></p>
+                    <ButtonGroup>
+                    {Object.values(availableBlocks).length > 0 
+                        ? Object.values(availableBlocks).map((key) => 
+                        <Button
+                            className={block == key ? 'btn__active' : ''}
+                            color="primary"
+                            name={key}
+                            value={values.block}
+                            onClick={(e) => {setBlock(key)}}
+                        >
+                          {key}
+                        </Button>
+                        )
+                        : 'Se encuentran todos los bloques del día reservados'
+                    }
+                    </ButtonGroup>
                     {errors.block && <p className='form__error__text'>{errors.block}</p>}
                 </div>
 

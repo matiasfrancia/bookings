@@ -1,16 +1,13 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from rest_framework import generics, status
 from django.utils.dateparse import parse_date
+from rest_framework.decorators import api_view
 
 from .models import Booking, DisabledBlocks, DisabledDays
+from .validations import validate_create_booking_block, validate_create_disabled_block, validate_create_disabled_day
 from .serializers import (
     BookingSerializer, 
-    CreateBookingSerializer, 
-    CreateDisabledBlocksSerializer,
-    CreateDisabledDaysSerializer, 
-    DisabledBlocksSerializer, 
-    CreateDisabledDaysSerializer, 
-    DisabledDays, 
+    DisabledBlocksSerializer,
     DisabledDaysSerializer
 )
 
@@ -23,27 +20,308 @@ class ListBookingView(generics.ListAPIView):
     serializer_class = BookingSerializer
 
 
-class ListDisabledBlockView(generics.ListAPIView):
+
+@api_view(['GET'])
+def ApiOverview(request):
+    api_urls = {
+        'all_items': '/',
+        'Search by Category': '/?category=category_name',
+        'Search by Subcategory': '/?subcategory=category_name',
+        'Add': '/create',
+        'Update': '/update/pk',
+        'Delete': '/item/pk/delete'
+    }
+  
+    return Response(api_urls)
+
+    
+# ============================================ Blocks ============================================
+
+
+""" class CreateDisabledBlocksView(APIView):
+    serializer_class = CreateDisabledBlocksSerializer
+
+    def post(self, request, format=None):
+
+        serializer = self.serializer_class(data=request.data)
+
+        if serializer.is_valid():
+            day = serializer.data.get('day')
+            block = serializer.data.get('block')
+
+            queryset = DisabledBlocks.objects.filter(day=day, block=block)
+            
+            if queryset.exists():
+                return Response(data="Ya existe una reserva en ese día y bloque", status=status.HTTP_226_IM_USED)
+            else:
+                disabled_blocks = DisabledBlocks(day=day, block=block)
+                disabled_blocks.save()
+                
+                return Response(DisabledBlocksSerializer(disabled_blocks).data, status=status.HTTP_201_CREATED)
+
+        return Response(data="There was an error in the creation of the disabled blocks", status=status.HTTP_400_BAD_REQUEST) """
+
+
+""" class ListDisabledBlockView(generics.ListAPIView):
     serializer_class = DisabledBlocksSerializer
 
     def get_queryset(self):
         print(self.kwargs['day'])
         queryset = DisabledBlocks.objects.filter(day=self.kwargs['day'])
-        return queryset
+        return queryset """
 
 
-class ListDisabledDayView(generics.ListAPIView):
+@api_view(['POST'])
+def create_block(request):
+
+    disabled_block = DisabledBlocksSerializer(data=request.data)
+
+    validations = []
+    validations.append(
+        validate_create_disabled_block(request.data.get('day'), request.data.get('block')))
+    
+    for valid, msg in validations:
+        if not valid:
+            return Response(data=msg, status=status.HTTP_400_BAD_REQUEST)
+
+    if disabled_block.is_valid():
+        day = disabled_block.data.get('day')
+        block = disabled_block.data.get('block')
+
+        queryset = DisabledBlocks.objects.filter(day=day, block=block)
+        
+        if queryset.exists():
+            return Response(data="Ya existe una reserva en ese día y bloque", status=status.HTTP_226_IM_USED)
+        else:
+            disabled_blocks = DisabledBlocks(day=day, block=block)
+            disabled_blocks.save()
+            
+            return Response(DisabledBlocksSerializer(disabled_blocks).data, status=status.HTTP_201_CREATED)
+
+    return Response(data="There was an error in the creation of the disabled blocks", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def view_blocks(request):
+
+    if request.query_params:
+        block = DisabledBlocks.objects.filter(**request.query_params.dict())
+    else:
+        block = DisabledBlocks.objects.all()
+
+    print(block)
+  
+    if block:
+        print("Entro al if")
+        data = DisabledBlocksSerializer(block, many=True)
+        return Response(data.data)
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+def update_block(request, pk):
+    disabled_block = DisabledBlocks.objects.get(pk=pk)
+    data = DisabledBlocksSerializer(instance=disabled_block, data=request.data)
+  
+    if data.is_valid():
+        data.save()
+        return Response(data.data)
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['DELETE'])
+def delete_block(request, pk):
+    disabled_block = get_object_or_404(DisabledBlocks, pk=pk)
+    disabled_block.delete()
+    return Response(status=status.HTTP_202_ACCEPTED)
+
+
+# ============================================ Days ============================================
+
+""" class CreateDisabledDaysView(APIView):
+    serializer_class = CreateDisabledDaysSerializer
+
+    def post(self, request, format=None):
+
+        serializer = self.serializer_class(data=request.data)
+
+        if serializer.is_valid():
+            day = serializer.data.get('day')
+            queryset = DisabledDays.objects.filter(day=day)
+            
+            if queryset.exists():
+                return Response(data="Este día ya está bloqueado", status=status.HTTP_226_IM_USED)
+            else:
+                disabled_day = DisabledDays(day=day)
+                disabled_day.save()
+                
+                return Response(DisabledDaysSerializer(disabled_day).data, status=status.HTTP_201_CREATED)
+
+        return Response(data="There was an error in the creation of the disabled day", status=status.HTTP_400_BAD_REQUEST) """
+
+
+@api_view(['POST'])
+def create_day(request):
+
+    disabled_day = DisabledDaysSerializer(data=request.data)
+
+    validations = []
+    validations.append(
+        validate_create_disabled_day(request.data.get('day')))
+    
+    for valid, msg in validations:
+        if not valid:
+            return Response(data=msg, status=status.HTTP_400_BAD_REQUEST)
+
+    if disabled_day.is_valid():
+        day = disabled_day.data.get('day')
+        queryset = DisabledDays.objects.filter(day=day)
+        
+        if queryset.exists():
+            return Response(data="Este día ya está bloqueado", status=status.HTTP_226_IM_USED)
+        else:
+            disabled_day = DisabledDays(day=day)
+            disabled_day.save()
+            
+            return Response(DisabledDaysSerializer(disabled_day).data, status=status.HTTP_201_CREATED)
+
+    return Response(data="There was an error in the creation of the disabled day", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def view_days(request):
+
+    if request.query_params:
+        days = DisabledDays.objects.filter(**request.query_params.dict())
+    else:
+        days = DisabledDays.objects.all()
+  
+    if days:
+        data = DisabledDaysSerializer(days, many=True)
+        return Response(data.data)
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+def update_day(request, pk):
+    disabled_day = DisabledDays.objects.get(pk=pk)
+    data = DisabledDaysSerializer(instance=disabled_day, data=request.data)
+  
+    if data.is_valid():
+        data.save()
+        return Response(data.data)
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['DELETE'])
+def delete_day(request, pk):
+    disabled_day = get_object_or_404(DisabledDays, pk=pk)
+    disabled_day.delete()
+    return Response(status=status.HTTP_202_ACCEPTED)
+
+
+""" class ListDisabledDayView(generics.ListAPIView):
     queryset = DisabledDays.objects.all()
-    serializer_class = DisabledDaysSerializer
+    serializer_class = DisabledDaysSerializer """
 
 
-class CreateBookingView(APIView):
+# ============================================ Bookings ============================================
+
+@api_view(['POST'])
+def create_booking(request):
+
+    booking = BookingSerializer(data=request.data)
+
+    print(request.data)
+
+    validations = []
+    validations.append(
+        validate_create_booking_block(request.data.get('block')))
+    
+    for valid, msg in validations:
+        if not valid:
+            return Response(data=msg, status=status.HTTP_400_BAD_REQUEST)
+
+    if booking.is_valid():
+        booking_date = booking.data.get('booking_date')
+        block = booking.data.get('block')
+        visitants = booking.data.get('visitants')
+        price = booking.data.get('price')
+        name = booking.data.get('name')
+        email = booking.data.get('email')
+
+        print("Booking date: " + booking_date)
+
+        queryset = Booking.objects.filter(booking_date=booking_date, block=block)
+        
+        if queryset.exists():
+            return Response(data="Ya existe una reserva en ese día y bloque", status=status.HTTP_226_IM_USED)
+        else:
+            disabled_blocks = DisabledBlocks.objects.create(day=booking_date, block=block)
+            print(disabled_blocks)
+            booking = Booking(booking_date=booking_date, block=block, visitants=visitants, price=price, name=name, email=email)
+            booking.save()
+            
+            return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
+
+    return Response(data="There was an error in the creation of the booking", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def view_bookings(request):
+
+    if request.query_params:
+        bookings = Booking.objects.filter(**request.query_params.dict())
+    else:
+        bookings = Booking.objects.all()
+  
+    if bookings:
+        data = BookingSerializer(bookings, many=True)
+        return Response(data.data)
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+def update_booking(request, pk):
+    booking = Booking.objects.get(pk=pk)
+    data = BookingSerializer(instance=booking, data=request.data)
+  
+    if data.is_valid():
+        data.save()
+        return Response(data.data)
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['DELETE'])
+def delete_booking(request, pk):
+    booking = get_object_or_404(Booking, pk=pk)
+    block = get_object_or_404(DisabledBlocks, day=booking.booking_date, block=booking.block)
+    block.delete()
+    booking.delete()
+    return Response(status=status.HTTP_202_ACCEPTED)
+
+
+""" class CreateBookingView(APIView):
     serializer_class = CreateBookingSerializer
 
     def post(self, request, format=None):
 
         print(request.data)
+
+        validations = []
+        validations.append(
+            validate_block(request.data.get('block')))
         
+        for valid, msg in validations:
+            if not valid:
+                return Response(data=msg, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
@@ -68,50 +346,4 @@ class CreateBookingView(APIView):
                 
                 return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
 
-        return Response(data="There was an error in the creation of the booking", status=status.HTTP_400_BAD_REQUEST)
-
-
-class CreateDisabledDaysView(APIView):
-    serializer_class = CreateDisabledDaysSerializer
-
-    def post(self, request, format=None):
-
-        serializer = self.serializer_class(data=request.data)
-
-        if serializer.is_valid():
-            day = serializer.data.get('day')
-            queryset = DisabledDays.objects.filter(day=day)
-            
-            if queryset.exists():
-                return Response(data="Ya existe una reserva en ese día y bloque", status=status.HTTP_226_IM_USED)
-            else:
-                disabled_day = DisabledDays(day=day)
-                disabled_day.save()
-                
-                return Response(DisabledDaysSerializer(disabled_day).data, status=status.HTTP_201_CREATED)
-
-        return Response(data="There was an error in the creation of the disabled day", status=status.HTTP_400_BAD_REQUEST)
-
-
-class CreateDisabledBlocksView(APIView):
-    serializer_class = CreateDisabledBlocksSerializer
-
-    def post(self, request, format=None):
-
-        serializer = self.serializer_class(data=request.data)
-
-        if serializer.is_valid():
-            day = serializer.data.get('day')
-            block = serializer.data.get('block')
-
-            queryset = DisabledBlocks.objects.filter(day=day, block=block)
-            
-            if queryset.exists():
-                return Response(data="Ya existe una reserva en ese día y bloque", status=status.HTTP_226_IM_USED)
-            else:
-                disabled_blocks = DisabledBlocks(day=day, block=block)
-                disabled_blocks.save()
-                
-                return Response(DisabledBlocksSerializer(disabled_blocks).data, status=status.HTTP_201_CREATED)
-
-        return Response(data="There was an error in the creation of the disabled blocks", status=status.HTTP_400_BAD_REQUEST)
+        return Response(data="There was an error in the creation of the booking", status=status.HTTP_400_BAD_REQUEST) """

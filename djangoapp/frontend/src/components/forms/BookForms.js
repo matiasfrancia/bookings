@@ -10,7 +10,7 @@ function BookForms() {
 
     // Booking data
     const [date, setDate] = useState(new Date());
-    const [block, setBlock] = useState(0);
+    const [block, setBlock] = useState("");
     const [visitants, setVisitants] = useState(0);
     const [price, setPrice] = useState(0);
     const [name, setName] = useState("");
@@ -30,7 +30,7 @@ function BookForms() {
 
     function submitBookingForm(data) {
   
-      if(data.booking_date && data.block !== 0 && data.visitants !== 0 && data.price !== 0) {            
+      if(data.booking_date && data.block !== "" && data.visitants !== 0 && data.price !== 0) {            
         setDate(data.booking_date);
         setBlock(data.block);
         setVisitants(data.visitants);
@@ -80,8 +80,8 @@ function BookForms() {
       }
     }
 
-    // TODO: asociar bloques a días
     // TODO: terminar el frontend, crear sistema de pagos y sistema de administración (bloquear bloques y días)
+    // TODO: cuando se ingrese a la vista con el calendario, el día seleccionado por defecto debe ser el siguiente en el cual hay una fecha disponible
 
     return (
         <div>

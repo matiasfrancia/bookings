@@ -19,12 +19,12 @@ class Booking(models.Model):
     email = models.EmailField(max_length = 254)
     creation_date = models.DateTimeField(auto_now_add = True)
     booking_date = models.DateField()
-    block = models.IntegerField()
+    block = models.CharField(max_length = 11)
     visitants = models.IntegerField()
     price = models.IntegerField()
 
 class DisabledBlocks(models.Model):
-    block = models.IntegerField()
+    block = models.CharField(max_length = 11)
     day = models.DateField()
 
     def __str__(self):
