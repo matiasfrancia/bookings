@@ -25,6 +25,11 @@ urlpatterns = [
     path('blocks/update/<int:pk>', views.update_block, name="update-block"),
     path('blocks/<int:pk>/delete/', views.delete_block, name="delete-block"),
 
+    path('create-payment/', views.create_payment, name="create-payment"),
+    path('disabled-payments/', views.view_payments, name="all-payments"),
+    path('payments/update/<int:pk>', views.update_payment, name="update-payment"),
+    path('payments/<int:pk>/delete/', views.delete_payment, name="delete-payment"),
+
     path('overview/', views.ApiOverview, name="overview"),
 
 ]

@@ -6,6 +6,8 @@ const useFormBooking = (callback, validate) => {
         booking_date: new Date(),
         visitants: 0,
         block: "",
+        group: "",
+        school: '',
         price: 100000
     });
     
@@ -76,6 +78,22 @@ const useFormBooking = (callback, validate) => {
         });
     }
     
+    function handleGroupChange(value) {
+        console.log("Cambio en group: " + value);
+        setValues({
+            ...values,
+            ["group"]: value
+        });
+    }
+    
+    function handleSchoolChange(value) {
+        console.log("Cambio en school: " + value);
+        setValues({
+            ...values,
+            ["school"]: value
+        });
+    }
+    
     const handleSubmit = e => {
         e.preventDefault();
 
@@ -90,7 +108,7 @@ const useFormBooking = (callback, validate) => {
         }
     }, [errors]);
 
-    return {handleChange, handleCalendarChange, handleBlockChange, values, handleSubmit, errors, availableBlocks};
+    return {handleChange, handleCalendarChange, handleBlockChange, handleGroupChange, handleSchoolChange, values, handleSubmit, errors, availableBlocks};
 };
 
 export default useFormBooking;

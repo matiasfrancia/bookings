@@ -1,14 +1,9 @@
 import { useState, useEffect } from "react";
 
-const useFormBuyer = (callback, validate) => {
+const useFormConfirmation = (callback, validate) => {
 
     const [values, setValues] = useState({
-        name: '',
-        lastname: '',
-        email: '',
-        cellphone: '',
-        documentType: '',
-        documentNumber: ''
+        confirmation: '',
     });
     
     const [errors, setErrors] = useState({});
@@ -16,7 +11,6 @@ const useFormBuyer = (callback, validate) => {
 
     const handleChange = e => {
         const {name, value} = e.target
-        console.log(name + ": " + value)
         setValues({
             ...values,
             [name]: value
@@ -39,4 +33,4 @@ const useFormBuyer = (callback, validate) => {
     return {handleChange, values, handleSubmit, errors};
 };
 
-export default useFormBuyer;
+export default useFormConfirmation;

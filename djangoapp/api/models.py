@@ -13,15 +13,30 @@ def generate_unique_code():
 
     return code
 
+class Payment(models.Model):
+    total = models.IntegerField()
+    # Payment details ...
+
 class Booking(models.Model):
+
     code = models.CharField(max_length = 8, default = generate_unique_code, unique = True)
-    name = models.CharField(max_length = 120)
-    email = models.EmailField(max_length = 254)
     creation_date = models.DateTimeField(auto_now_add = True)
+    
     booking_date = models.DateField()
     block = models.CharField(max_length = 11)
     visitants = models.IntegerField()
+    group = models.CharField(max_length = 20)
+    school = models.CharField(max_length = 120, blank=True, null=True)
     price = models.IntegerField()
+
+    name = models.CharField(max_length = 120)
+    lastname = models.CharField(max_length = 120)
+    email = models.EmailField(max_length = 254)
+    cellphone = models.CharField(max_length = 20)
+    document_type = models.CharField(max_length=20)
+    document_number = models.CharField(max_length=30)
+
+    payment = models.ForeignKey(Payment, on_delete=models.DO_NOTHING, blank=True, null=True)
 
 class DisabledBlocks(models.Model):
     block = models.CharField(max_length = 11)

@@ -1,6 +1,13 @@
 from django.shortcuts import get_object_or_404
 from .models import Booking, DisabledBlocks
 
+# Payment validations
+
+def validate_create_payment(total):
+    if total <= 0:
+        return (False, "El total del pago no puede ser menor o igual a 0")
+    return (True, "El total del pago es mayor a 0")
+
 # Booking validations
 
 def validate_create_booking_block(block):
@@ -10,7 +17,7 @@ def validate_create_booking_block(block):
     return (True, "El formato del bloque es correcto")
 
 def validate_create_booking_visitants(visitants, inf_bound):
-    if visitants <= inf_bound:
+    if visitants < inf_bound:
         return (False, "La cantidad de visitantes es menor a la permitida, el mínimo por reserva son " + str(inf_bound) + " vistantes")
     return (True, "La cantidad de visitantes de esta reserva es correcta")
 
@@ -25,7 +32,7 @@ def validate_create_disabled_day(day):
 # Disabled blocks validation
 
 def validate_create_disabled_block(day, block):
-    block = get_object_or_404(DisabledBlocks, day=day, block=block)
+    block = DisabledBlocks.objects.filter(day=day, block=block)
     if block:
-        return (False, "Ya existe una reserva en este día y bloque, o ya se bloqueó previamente, si desea deshabilitarlo de todos modos primero debe eliminar la reserva")
-    return (True, "No existe ninguna reserva en este día y bloque, ni se encuentra bloqueado ya, por lo que se puede deshabilitar")
+        return (False, "Este bloque ya se encuentra deshabilitado")
+    return (True, "Este bloque está habilitado")

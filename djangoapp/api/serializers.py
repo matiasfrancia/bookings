@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Booking, DisabledBlocks, DisabledDays
+from .models import Booking, DisabledBlocks, DisabledDays, Payment
 
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,4 +15,9 @@ class DisabledBlocksSerializer(serializers.ModelSerializer):
 class DisabledDaysSerializer(serializers.ModelSerializer):
     class Meta:
         model = DisabledDays
+        fields = '__all__'
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
         fields = '__all__'

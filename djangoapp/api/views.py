@@ -1,14 +1,17 @@
+import json
 from django.shortcuts import get_object_or_404, render
 from rest_framework import generics, status
 from django.utils.dateparse import parse_date
 from rest_framework.decorators import api_view
+import requests
 
-from .models import Booking, DisabledBlocks, DisabledDays
-from .validations import validate_create_booking_block, validate_create_disabled_block, validate_create_disabled_day
+from .models import Booking, DisabledBlocks, DisabledDays, Payment
+from .validations import validate_create_booking_block, validate_create_booking_visitants, validate_create_disabled_block, validate_create_disabled_day, validate_create_payment
 from .serializers import (
     BookingSerializer, 
     DisabledBlocksSerializer,
-    DisabledDaysSerializer
+    DisabledDaysSerializer,
+    PaymentSerializer
 )
 
 from rest_framework.views import APIView
@@ -33,6 +36,72 @@ def ApiOverview(request):
     }
   
     return Response(api_urls)
+
+# ============================================ Payment ============================================
+
+
+@api_view(['POST'])
+def create_payment(request):
+
+    print(request.data)
+
+    payment = PaymentSerializer(data=request.data)
+
+    validations = [
+        validate_create_payment(int(request.data.get('total'))),
+    ]
+    
+    error_msg = "\n".join([msg for valid, msg in validations if not valid])
+    print(error_msg)
+
+    if error_msg != "":
+        return Response(data=error_msg, status=status.HTTP_400_BAD_REQUEST)
+
+    if payment.is_valid():
+        total = payment.data.get('total')
+
+        payment = Payment.objects.create(total=total)
+        print(PaymentSerializer(payment).data)
+            
+        return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+
+    return Response(data="There was an error in the creation of the payment object", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def view_payments(request):
+
+    if request.query_params:
+        payment = Payment.objects.filter(**request.query_params.dict())
+    else:
+        payment = Payment.objects.all()
+
+    print(payment)
+  
+    if payment:
+        data = PaymentSerializer(payment, many=True)
+        return Response(data.data)
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+def update_payment(request, pk):
+    payment = Payment.objects.get(pk=pk)
+    data = PaymentSerializer(instance=payment, data=request.data)
+  
+    if data.is_valid():
+        data.save()
+        return Response(data.data)
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['DELETE'])
+def delete_payment(request, pk):
+    payment = get_object_or_404(Payment, pk=pk)
+    payment.delete()
+    return Response(status=status.HTTP_202_ACCEPTED)
 
     
 # ============================================ Blocks ============================================
@@ -76,13 +145,15 @@ def create_block(request):
 
     disabled_block = DisabledBlocksSerializer(data=request.data)
 
-    validations = []
-    validations.append(
-        validate_create_disabled_block(request.data.get('day'), request.data.get('block')))
+    validations = [
+        validate_create_disabled_block(request.data.get('day'), request.data.get('block'))
+    ]
     
-    for valid, msg in validations:
-        if not valid:
-            return Response(data=msg, status=status.HTTP_400_BAD_REQUEST)
+    error_msg = "\n".join([msg for valid, msg in validations if not valid])
+    print(error_msg)
+
+    if error_msg != "":
+        return Response(data=error_msg, status=status.HTTP_400_BAD_REQUEST)
 
     if disabled_block.is_valid():
         day = disabled_block.data.get('day')
@@ -167,13 +238,15 @@ def create_day(request):
 
     disabled_day = DisabledDaysSerializer(data=request.data)
 
-    validations = []
-    validations.append(
-        validate_create_disabled_day(request.data.get('day')))
-    
-    for valid, msg in validations:
-        if not valid:
-            return Response(data=msg, status=status.HTTP_400_BAD_REQUEST)
+    validations = [
+        validate_create_disabled_day(request.data.get('day'))
+    ]
+
+    error_msg = "\n".join([msg for valid, msg in validations if not valid])
+    print(error_msg)
+
+    if error_msg != "":
+        return Response(data=error_msg, status=status.HTTP_400_BAD_REQUEST)
 
     if disabled_day.is_valid():
         day = disabled_day.data.get('day')
@@ -234,39 +307,68 @@ def delete_day(request, pk):
 @api_view(['POST'])
 def create_booking(request):
 
+    print(request.data)
     booking = BookingSerializer(data=request.data)
 
-    print(request.data)
+    validations = [
+        validate_create_booking_block(request.data.get('block')),
+        validate_create_booking_visitants(request.data.get('visitants'), 10),
+        validate_create_disabled_block(request.data.get('booking_date'), request.data.get('block'))
+    ]
 
-    validations = []
-    validations.append(
-        validate_create_booking_block(request.data.get('block')))
-    
-    for valid, msg in validations:
-        if not valid:
-            return Response(data=msg, status=status.HTTP_400_BAD_REQUEST)
+    error_msg = "\n".join([msg for valid, msg in validations if not valid])
+
+    print(error_msg)
+
+    if error_msg != "":
+        return Response(data=error_msg, status=status.HTTP_400_BAD_REQUEST)
 
     if booking.is_valid():
         booking_date = booking.data.get('booking_date')
         block = booking.data.get('block')
         visitants = booking.data.get('visitants')
+        group = booking.data.get('group')
+        school = booking.data.get('school')
         price = booking.data.get('price')
+
         name = booking.data.get('name')
+        lastname = booking.data.get('lastname')
         email = booking.data.get('email')
+        cellphone = booking.data.get('cellphone')
+        document_type = booking.data.get('document_type')
+        document_number = booking.data.get('document_number')
 
-        print("Booking date: " + booking_date)
-
-        queryset = Booking.objects.filter(booking_date=booking_date, block=block)
+        payment = requests.post(
+            'http://localhost:8000/api/create-payment/', 
+            data={
+                "total": request.data.get('price')
+            }
+        )
+        payment = Payment(**json.loads(payment.text))
         
-        if queryset.exists():
-            return Response(data="Ya existe una reserva en ese día y bloque", status=status.HTTP_226_IM_USED)
-        else:
-            disabled_blocks = DisabledBlocks.objects.create(day=booking_date, block=block)
-            print(disabled_blocks)
-            booking = Booking(booking_date=booking_date, block=block, visitants=visitants, price=price, name=name, email=email)
-            booking.save()
+        disabled_blocks = DisabledBlocks(day=booking_date, block=block)
+        disabled_blocks.save()
+
+        booking = Booking(
+            booking_date=booking_date, 
+            block=block, 
+            visitants=visitants, 
+            group=group,
+            school=school,
+            price=price, 
             
-            return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
+            name=name, 
+            lastname=lastname,
+            email=email, 
+            cellphone=cellphone,
+            document_type=document_type,
+            document_number=document_number,
+
+            payment=payment
+        )
+        booking.save()
+        
+        return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
 
     return Response(data="There was an error in the creation of the booking", status=status.HTTP_400_BAD_REQUEST)
 

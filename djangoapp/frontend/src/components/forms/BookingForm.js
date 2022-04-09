@@ -16,6 +16,8 @@ function BookingForm({ submitForm }) {
         handleChange, 
         handleCalendarChange, 
         handleBlockChange,
+        handleGroupChange,
+        handleSchoolChange,
         values, 
         handleSubmit, 
         errors, 
@@ -25,6 +27,8 @@ function BookingForm({ submitForm }) {
     const [date, setDate] = useState(new Date());
     const [disabledDates, setDisabledDates] = useState([]);
     const [block, setBlock] = useState("");
+    const [group, setGroup] = useState("");
+    const [school, setSchool] = useState("");
 
     useEffect(() => {
         console.log(disabledDates);
@@ -42,6 +46,14 @@ function BookingForm({ submitForm }) {
     useEffect(() => {
         handleBlockChange(block);
     }, [block]);
+
+    useEffect(() => {
+        handleGroupChange(group);
+    }, [group]);
+
+    useEffect(() => {
+        handleSchoolChange(school);
+    }, [school]);
 
     function convertStringstoDates(strDates) {
         return strDates.map(strDate => {
@@ -88,22 +100,6 @@ function BookingForm({ submitForm }) {
             <p className='form__title'>Datos de la reserva</p>
             <form className='form' onSubmit={handleSubmit}>
 
-            <div className='form__inputs'>
-                    <label htmlFor='visitants' className='form__label'>
-                        Cantidad de Visitantes
-                    </label>
-                    <input
-                        id='visitants'
-                        type='number' 
-                        name='visitants'
-                        className='form__input'
-                        placeholder=''
-                        value={values.visitants} // Revisar que exista ese atributo en values
-                        onChange={handleChange}
-                    />
-                    {errors.visitants && <p className='form__error__text'>{errors.visitants}</p>}
-                </div>
-
                 <div className='form__inputs'>
                     <Calendar
                         value={values.booking_date}
@@ -131,7 +127,7 @@ function BookingForm({ submitForm }) {
                             value={values.block}
                             onClick={(e) => {setBlock(key)}}
                         >
-                          {key}
+                        {key}
                         </Button>
                         )
                         : 'Se encuentran todos los bloques del día reservados'
@@ -139,6 +135,70 @@ function BookingForm({ submitForm }) {
                     </ButtonGroup>
                     {errors.block && <p className='form__error__text'>{errors.block}</p>}
                 </div>
+
+                <div className='form__inputs'>
+                    <label htmlFor='visitants' className='form__label'>
+                        Cantidad de Visitantes
+                    </label>
+                    <input
+                        id='visitants'
+                        type='number' 
+                        name='visitants'
+                        className='form__input'
+                        placeholder=''
+                        value={values.visitants} // Revisar que exista ese atributo en values
+                        onChange={handleChange}
+                    />
+                    {errors.visitants && <p className='form__error__text'>{errors.visitants}</p>}
+                </div>
+
+                <div className='form__inputs'>
+                    <label htmlFor='group' className='form__label'>
+                        Tipo de grupo
+                    </label>
+                    <ButtonGroup>
+                        <Button
+                            className={group == "estudiante" ? 'btn__active' : ''}
+                            color="primary"
+                            name="estudiante"
+                            value={values.group}
+                            key="estudiante"
+                            onClick={(e) => {setGroup("estudiante")}}
+                        >
+                        {"Estudiante"}
+                        </Button>
+                        <Button
+                            className={group == "general" ? 'btn__active' : ''}
+                            color="primary"
+                            name="general"
+                            key="general"
+                            value={values.group}
+                            onClick={(e) => {setGroup("general")}}
+                        >
+                        {"General"}
+                        </Button>
+                    </ButtonGroup>
+                    {errors.group && <p className='form__error__text'>{errors.group}</p>}
+                </div>
+
+                {group == "estudiante" 
+                ?    <div className='form__inputs'>
+                        <label htmlFor='school' className='form__label'>
+                            Nombre de la institución educativa
+                        </label>
+                        <input
+                            id='school'
+                            type='text' 
+                            name='school'
+                            className='form__input'
+                            placeholder=''
+                            value={values.school} // Revisar que exista ese atributo en values
+                            onChange={(e) => {setSchool(e.target.value)}}
+                        />
+                        {errors.school && <p className='form__error__text'>{errors.school}</p>}
+                    </div>
+                : <div></div>
+                }
 
                 <button className='form__input__btn' type='submit'>
                     Enviar

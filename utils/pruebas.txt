@@ -1,0 +1,14 @@
+{
+"booking_date": "2022-04-10",
+"block": "8:00-9:50",
+"visitants": 10,
+"group": "Estudiantes",
+"school": "Scuola Italiana Arturo dell'Oro",
+"price": 60000,
+"name": "Matías",
+"lastname": "Francia",
+"email": "matiasfrancia1@gmail.com",
+"cellphone": "+56 9 48633895",
+"document_type": "rut",
+"document_number": "20.478.561-9"
+}
