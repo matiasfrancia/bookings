@@ -1,14 +1,11 @@
 from django.urls import path
 from . import views
 
-urlpatterns = [
-    # path('create-booking/', views.CreateBookingView.as_view()),
-    # path('bookings/', views.ListBookingView.as_view()),
+from rest_framework_simplejwt.views import (
+    TokenRefreshView,
+)
 
-    # path('create-day/', views.CreateDisabledDaysView.as_view()),
-    # path('disabled-days/', views.ListDisabledDayView.as_view()),
-    # path('create-blocks/', views.CreateDisabledBlocksView.as_view()),
-    # path('disabled-blocks/<slug:day>', views.ListDisabledBlockView.as_view()),
+urlpatterns = [
     
     path('create-booking/', views.create_booking, name="create-booking"),
     path('bookings/', views.view_bookings, name="all-bookings"),
@@ -30,6 +27,7 @@ urlpatterns = [
     path('payments/update/<int:pk>', views.update_payment, name="update-payment"),
     path('payments/<int:pk>/delete/', views.delete_payment, name="delete-payment"),
 
-    path('overview/', views.ApiOverview, name="overview"),
-
+    path('', views.getRoutes),
+    path('token/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

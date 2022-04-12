@@ -1,9 +1,10 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faBars } from '@fortawesome/free-solid-svg-icons';
 import { Button } from './Button';
 import '../../static/css/Navbar.css';
+import AuthContext from './../context/AuthContext';
 
 function Navbar() {
   const [click, setClick] = useState(false);
@@ -25,6 +26,8 @@ function Navbar() {
   }, []);
 
   window.addEventListener('resize', showButton);
+
+  let {user, logoutUser} = useContext(AuthContext);
 
   return (
     <>
@@ -58,10 +61,17 @@ function Navbar() {
                 Contacto
               </Link>
             </li>
+            {user && 
+            <li className='nav-item'>
+              <p className='nav-links' onClick={logoutUser}>
+                Cerrar sesión
+              </p>
+            </li>}
+            
           </ul>
-          {button && <Button buttonStyle='btn--outline'>SIGN UP</Button>}
         </div>
       </nav>
+      {user && <p>Hello {user.username}</p>}
     </>
   );
 }

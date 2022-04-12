@@ -7,18 +7,25 @@ import Home from './pages/Home';
 import AboutUs from "./pages/AboutUs";
 import Bookings from "./pages/Bookings";
 import Contact from "./pages/Contact";
+import LoginPage from "./pages/LoginPage";
+
+import { PrivateRoute } from "./../utils/PrivateRoute";
+import { AuthProvider } from "./../context/AuthContext";
 
 function App() {
   return (
     <>
       <Router>
-        <Navbar />
-        <Routes>
-          <Route exact path='/' element={<Home/>}/>
-          <Route exact path='/about-us' element={<AboutUs/>}/>
-          <Route exact path='/bookings' element={<Bookings/>}/>
-          <Route exact path='/contact' element={<Contact/>}/>
-        </Routes>
+        <AuthProvider>
+          <Navbar />
+          <Routes>
+            <Route exact path='/' element={<PrivateRoute><Home/></PrivateRoute>}/>
+            <Route exact path='/about-us' element={<AboutUs/>}/>
+            <Route exact path='/bookings' element={<Bookings/>}/>
+            <Route exact path='/contact' element={<Contact/>}/>
+            <Route exact path='/login' element={<LoginPage/>}/>
+          </Routes>
+        </AuthProvider>
       </Router>
     </>
   );
