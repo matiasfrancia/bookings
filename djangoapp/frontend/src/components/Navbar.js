@@ -35,7 +35,7 @@ function Navbar() {
         <div className='navbar-container'>
           <Link to='/' className='navbar-logo' onClick={closeMobileMenu}>
             ADP
-            <i class='fab fa-typo3' />
+            <i className='fab fa-typo3' />
           </Link>
           <div className='menu-icon' onClick={handleClick}>
             <i className={click ? 'fas fa-times' : 'fas fa-bars'} />
@@ -61,17 +61,22 @@ function Navbar() {
                 Contacto
               </Link>
             </li>
-            {user && 
-            <li className='nav-item'>
-              <p className='nav-links' onClick={logoutUser}>
-                Cerrar sesión
-              </p>
+
+            {user && <li className='nav-item'>
+              <Link to='/admin-profile' className='nav-links' onClick={closeMobileMenu}>
+                Admin
+              </Link>
             </li>}
             
           </ul>
+
+          {user && <li className='nav-item'>
+            <p className='nav-links' onClick={logoutUser}>
+              Cerrar sesión
+            </p>
+          </li>}
         </div>
       </nav>
-      {user && <p>Hello {user.username}</p>}
     </>
   );
 }

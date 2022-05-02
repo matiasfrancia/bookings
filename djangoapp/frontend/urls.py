@@ -7,4 +7,5 @@ urlpatterns = [
     path('bookings/', index),
     path('contact/', index),
     path('login/', index),
+    path('admin-profile/', index),
 ]

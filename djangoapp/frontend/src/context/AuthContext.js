@@ -38,10 +38,10 @@ export const AuthProvider = ({children}) => {
             setAuthTokens(data);
             setUser(jwt_decode(data.access));
             localStorage.setItem('authTokens', JSON.stringify(data));
-            navigate('/');
+            navigate('/admin-profile');
         }
         else {
-            alert('Oh no! Algo anda mal');
+            alert('Credenciales incorrectas, reviselas e intentelo nuevamente');
         }
     }
 
@@ -74,8 +74,8 @@ export const AuthProvider = ({children}) => {
     let logoutUser = () => {
         setAuthTokens(null);
         setUser(null);
-        localStorage.setItem('authTokens');
-        navigate('/');s
+        localStorage.removeItem('authTokens');
+        navigate('/')
     }
 
     let contextData = {
@@ -88,7 +88,15 @@ export const AuthProvider = ({children}) => {
     useEffect(() => {
 
         if(loading) {
-            updateToken();
+            console.log("Entro al loading");
+            if(authTokens) {
+                console.log("Entro al authTokens");
+                updateToken();
+            }
+            else {
+                console.log("Seteo el loading en false");
+                setLoading(false);
+            }
         }
 
         let fourMinutes = 1000 * 60 * 4;

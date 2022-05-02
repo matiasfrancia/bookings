@@ -66,7 +66,7 @@ function BookingForm({ submitForm }) {
     const getDisabledDates = async () => {
         try {
     
-            let res = await fetch("http://localhost:8000/api/disabled-days/", {
+            await fetch("http://localhost:8000/api/disabled-days/", {
                 method: "GET",
                 headers: {"Content-Type": "application/json"},
             }).then(response => response.json())
@@ -181,6 +181,18 @@ function BookingForm({ submitForm }) {
                     {errors.group && <p className='form__error__text'>{errors.group}</p>}
                 </div>
 
+                {/* TODO: crear un solo componente con todos los input
+                    Tendría que tener:
+                    - label
+                    - name
+                    - id
+                    - clase 
+                    - placeholder
+                    - value
+                    - setter
+                    - errors
+                */}
+
                 {group == "estudiante" 
                 ?    <div className='form__inputs'>
                         <label htmlFor='school' className='form__label'>
@@ -195,6 +207,7 @@ function BookingForm({ submitForm }) {
                             value={values.school} // Revisar que exista ese atributo en values
                             onChange={(e) => {setSchool(e.target.value)}}
                         />
+                        {/* TODO: agregar iconos de error */}
                         {errors.school && <p className='form__error__text'>{errors.school}</p>}
                     </div>
                 : <div></div>

@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react'
 import BookingForm from './BookingForm';
 import BuyerForm from './BuyerForm';
 import ConfirmationForm from './ConfirmationForm';
+import { formatInTimeZone } from 'date-fns-tz'
 
 function BookForms() {
 
@@ -83,7 +84,7 @@ function BookForms() {
       try {
         
         let bodyDict = {
-          booking_date: date.toISOString().split('T')[0],
+          booking_date: formatInTimeZone(date, 'America/Santiago', 'yyyy-MM-dd'),
           block: block,
           visitants: visitants,
           group: group,
@@ -106,8 +107,7 @@ function BookForms() {
         .then(response => setResp(response))
         .catch(error => console.log(error));
         
-        // TODO: se puede cambiar y evaluar el código de respuesta HTTP
-        if (resp.code !== null) {
+        if (res.status === 201) {
           setMessage("La reserva fue generada con éxito");
         } else {
           setMessage("Ocurrió un error al crear la reserva, recargue la página e intente nuevamente");
@@ -117,7 +117,7 @@ function BookForms() {
       }
     }
 
-    // TODO: terminar el frontend, crear sistema de pagos y sistema de administración (bloquear bloques y días)
+    // TODO: terminar el frontend, crear sistema de pagos
     // TODO: cuando se ingrese a la vista con el calendario, el día seleccionado por defecto debe ser el siguiente en el cual hay una fecha disponible
 
     return (

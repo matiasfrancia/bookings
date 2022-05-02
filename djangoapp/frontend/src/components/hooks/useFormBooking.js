@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatInTimeZone } from 'date-fns-tz'
 
 const useFormBooking = (callback, validate) => {
 
@@ -38,7 +39,7 @@ const useFormBooking = (callback, validate) => {
 
         try {
   
-          let res = await fetch("http://localhost:8000/api/disabled-blocks?day=" + day.toISOString().split('T')[0], {
+          let res = await fetch("http://localhost:8000/api/disabled-blocks?day=" + formatInTimeZone(day, 'America/Santiago', 'yyyy-MM-dd'), {
             method: "GET",
             headers: {"Content-Type": "application/json"},
           }).then(response => {
@@ -108,7 +109,8 @@ const useFormBooking = (callback, validate) => {
         }
     }, [errors]);
 
-    return {handleChange, handleCalendarChange, handleBlockChange, handleGroupChange, handleSchoolChange, values, handleSubmit, errors, availableBlocks};
+    return {handleChange, handleCalendarChange, handleBlockChange, handleGroupChange, handleSchoolChange, values, 
+        handleSubmit, errors, availableBlocks};
 };
 
 export default useFormBooking;

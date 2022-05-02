@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from .models import Booking, DisabledBlocks
+from .models import Booking, DisabledBlocks, DisabledDays
 
 # Payment validations
 
@@ -21,6 +21,12 @@ def validate_create_booking_visitants(visitants, inf_bound):
         return (False, "La cantidad de visitantes es menor a la permitida, el mínimo por reserva son " + str(inf_bound) + " vistantes")
     return (True, "La cantidad de visitantes de esta reserva es correcta")
 
+def validate_create_booking_booking_date(day):
+    day = DisabledDays.objects.filter(day=day)
+    if day:
+        return (False, "El día de la reserva se encuentra bloqueado")
+    return (True, "Este día está habilitado")
+
 # Disabled days validations
 
 def validate_create_disabled_day(day):
@@ -32,7 +38,7 @@ def validate_create_disabled_day(day):
 # Disabled blocks validation
 
 def validate_create_disabled_block(day, block):
-    block = DisabledBlocks.objects.filter(day=day, block=block)
-    if block:
+    blocks = DisabledBlocks.objects.filter(day=day, block=block)
+    if blocks.exists():
         return (False, "Este bloque ya se encuentra deshabilitado")
     return (True, "Este bloque está habilitado")

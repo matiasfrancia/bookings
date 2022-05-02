@@ -1,12 +1,13 @@
 import json
 from django.shortcuts import get_object_or_404, render
+from matplotlib.font_manager import json_dump
 from rest_framework import generics, status
 from django.utils.dateparse import parse_date
 from rest_framework.decorators import api_view
 import requests
 
 from .models import Booking, DisabledBlocks, DisabledDays, Payment
-from .validations import validate_create_booking_block, validate_create_booking_visitants, validate_create_disabled_block, validate_create_disabled_day, validate_create_payment
+from .validations import validate_create_booking_block, validate_create_booking_booking_date, validate_create_booking_visitants, validate_create_disabled_block, validate_create_disabled_day, validate_create_payment
 from .serializers import (
     BookingSerializer, 
     DisabledBlocksSerializer,
@@ -59,11 +60,11 @@ def create_payment(request):
         validate_create_payment(int(request.data.get('total'))),
     ]
     
-    error_msg = "\n".join([msg for valid, msg in validations if not valid])
+    error_msg = "\n".join(["- " + msg for valid, msg in validations if not valid])
     print(error_msg)
 
     if error_msg != "":
-        return Response(data=error_msg, status=status.HTTP_400_BAD_REQUEST)
+        return Response(data={'error_msg': error_msg}, status=status.HTTP_400_BAD_REQUEST)
 
     if payment.is_valid():
         total = payment.data.get('total')
@@ -90,7 +91,7 @@ def view_payments(request):
         data = PaymentSerializer(payment, many=True)
         return Response(data.data)
     else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['POST'])
@@ -102,7 +103,7 @@ def update_payment(request, pk):
         data.save()
         return Response(data.data)
     else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['DELETE'])
@@ -118,16 +119,18 @@ def delete_payment(request, pk):
 def create_block(request):
 
     disabled_block = DisabledBlocksSerializer(data=request.data)
+    print("Bloque: ", request.data.get('block'), " Día: ", request.data.get('day'))
+    print("Bloques en la bd: ", DisabledBlocks.objects.filter(day=request.data.get('day'), block=request.data.get('block')))
 
     validations = [
         validate_create_disabled_block(request.data.get('day'), request.data.get('block'))
     ]
     
-    error_msg = "\n".join([msg for valid, msg in validations if not valid])
+    error_msg = "\n".join(["- " + msg for valid, msg in validations if not valid])
     print(error_msg)
 
     if error_msg != "":
-        return Response(data=error_msg, status=status.HTTP_400_BAD_REQUEST)
+        return Response(data={'error_msg': error_msg}, status=status.HTTP_400_BAD_REQUEST)
 
     if disabled_block.is_valid():
         day = disabled_block.data.get('day')
@@ -157,11 +160,10 @@ def view_blocks(request):
     print(block)
   
     if block:
-        print("Entro al if")
         data = DisabledBlocksSerializer(block, many=True)
         return Response(data.data)
     else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(json.dumps({}), status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['POST'])
@@ -173,14 +175,24 @@ def update_block(request, pk):
         data.save()
         return Response(data.data)
     else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['DELETE'])
-def delete_block(request, pk):
-    disabled_block = get_object_or_404(DisabledBlocks, pk=pk)
-    disabled_block.delete()
-    return Response(status=status.HTTP_202_ACCEPTED)
+def delete_block(request):
+    disabled_block = DisabledBlocks.objects.get(day=request.query_params.get('day'), block=request.query_params.get('block'))
+    booking_that_block = Booking.objects.filter(booking_date=request.query_params.get('day'), block=request.query_params.get('block'))
+    print(booking_that_block)
+    
+    if disabled_block and not booking_that_block:
+        disabled_block.delete()
+        return Response(data={}, status=status.HTTP_202_ACCEPTED)
+    elif disabled_block and booking_that_block:
+        return Response(
+            data={'error_msg': "- El bloque que se desea deshabilitar contiene una reserva, elimínela antes de ejecutar esta acción"}, 
+            status=status.HTTP_401_UNAUTHORIZED)
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 # ============================================ Days ============================================
@@ -194,11 +206,11 @@ def create_day(request):
         validate_create_disabled_day(request.data.get('day'))
     ]
 
-    error_msg = "\n".join([msg for valid, msg in validations if not valid])
+    error_msg = "\n".join(["- " + msg for valid, msg in validations if not valid])
     print(error_msg)
 
     if error_msg != "":
-        return Response(data=error_msg, status=status.HTTP_400_BAD_REQUEST)
+        return Response(data={'error_msg': error_msg}, status=status.HTTP_400_BAD_REQUEST)
 
     if disabled_day.is_valid():
         day = disabled_day.data.get('day')
@@ -227,7 +239,7 @@ def view_days(request):
         data = DisabledDaysSerializer(days, many=True)
         return Response(data.data)
     else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['POST'])
@@ -239,14 +251,17 @@ def update_day(request, pk):
         data.save()
         return Response(data.data)
     else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['DELETE'])
-def delete_day(request, pk):
-    disabled_day = get_object_or_404(DisabledDays, pk=pk)
-    disabled_day.delete()
-    return Response(status=status.HTTP_202_ACCEPTED)
+def delete_day(request):
+    disabled_day = DisabledDays.objects.get(day=request.query_params.get('day'))
+    if disabled_day:
+        disabled_day.delete()
+        return Response(status=status.HTTP_202_ACCEPTED)
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 # ============================================ Bookings ============================================
@@ -260,15 +275,15 @@ def create_booking(request):
     validations = [
         validate_create_booking_block(request.data.get('block')),
         validate_create_booking_visitants(request.data.get('visitants'), 10),
-        validate_create_disabled_block(request.data.get('booking_date'), request.data.get('block'))
+        validate_create_disabled_block(request.data.get('booking_date'), request.data.get('block')),
+        validate_create_booking_booking_date(request.data.get('booking_date'))
     ]
 
-    error_msg = "\n".join([msg for valid, msg in validations if not valid])
-
+    error_msg = "\n".join(["- " + msg for valid, msg in validations if not valid])
     print(error_msg)
 
     if error_msg != "":
-        return Response(data=error_msg, status=status.HTTP_400_BAD_REQUEST)
+        return Response(data={'error_msg': error_msg}, status=status.HTTP_400_BAD_REQUEST)
 
     if booking.is_valid():
         booking_date = booking.data.get('booking_date')
@@ -332,7 +347,7 @@ def view_bookings(request):
         data = BookingSerializer(bookings, many=True)
         return Response(data.data)
     else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['POST'])
@@ -344,13 +359,25 @@ def update_booking(request, pk):
         data.save()
         return Response(data.data)
     else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['DELETE'])
-def delete_booking(request, pk):
-    booking = get_object_or_404(Booking, pk=pk)
-    block = get_object_or_404(DisabledBlocks, day=booking.booking_date, block=booking.block)
-    block.delete()
-    booking.delete()
-    return Response(status=status.HTTP_202_ACCEPTED)
+def delete_booking(request):
+
+    booking = Booking.objects.filter(booking_date=request.query_params.get('day'), block=request.query_params.get('block'))
+    block = DisabledBlocks.objects.filter(day=request.query_params.get('day'), block=request.query_params.get('block'))
+
+    if booking.exists() and block.exists():
+        booking.delete()
+        block.delete()
+        return Response(status=status.HTTP_202_ACCEPTED)
+
+    elif booking.exists() and not block.exists():
+        return Response(data={'error_msg': "La reserva existe, pero el bloque se encuentra habilitado "
+         + "(hay inconsistencia de los datos guardados en la base de datos)"}, 
+         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+         
+    elif not booking.exists():
+        return Response(data={'error_msg': "La reserva que desea eliminar no existe"}, 
+            status=status.HTTP_404_NOT_FOUND)
