@@ -23,11 +23,14 @@ urlpatterns = [
     path('blocks/delete/', views.delete_block, name="delete-block"),
 
     path('create-payment/', views.create_payment, name="create-payment"),
-    path('disabled-payments/', views.view_payments, name="all-payments"),
+    path('payments/', views.view_payments, name="all-payments"),
     path('payments/update/<int:pk>', views.update_payment, name="update-payment"),
     path('payments/<int:pk>/delete/', views.delete_payment, name="delete-payment"),
 
     path('', views.getRoutes),
     path('token/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    path('webpay-plus/create/', views.webpay_plus_create, name="webpay-plus-create"),
+    path('webpay-plus/commit/', views.webpay_plus_commit, name="webpay-plus-commit"),
 ]

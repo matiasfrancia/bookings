@@ -14,8 +14,21 @@ def generate_unique_code():
     return code
 
 class Payment(models.Model):
-    total = models.IntegerField()
-    # Payment details ...
+    token = models.CharField(max_length=64)
+    vci = models.CharField(max_length=50)
+    amount = models.IntegerField()
+    status = models.CharField(max_length=64)
+    buy_order = models.CharField(max_length=26)
+    session_id = models.CharField(max_length=61)
+    card_number = models.CharField(max_length=19)
+    accounting_date = models.CharField(max_length=4)
+    transaction_date = models.CharField(max_length=24)
+    authorization_code = models.CharField(max_length=6)
+    payment_type_code = models.CharField(max_length=10)
+    response_code = models.IntegerField()
+    installments_amount = models.IntegerField(blank=True, null=True)
+    installments_number = models.IntegerField()
+    balance = models.IntegerField(blank=True, null=True)
 
 class Booking(models.Model):
 

@@ -52,15 +52,17 @@ function Navbar() {
               </Link>
             </li>
             <li className='nav-item'>
-              <Link to='/bookings' className='nav-links' onClick={closeMobileMenu}>
-                Reservas
-              </Link>
-            </li>
-            <li className='nav-item'>
               <Link to='/contact' className='nav-links' onClick={closeMobileMenu}>
                 Contacto
               </Link>
             </li>
+            <li className='nav-item'>
+              <Link to='/bookings' className='nav-links' onClick={closeMobileMenu}>
+                Reservas
+              </Link>
+            </li>
+
+            {/* TODO: Eliminar en la vista del administrador las páginas que ve el usuario normal */}
 
             {user && <li className='nav-item'>
               <Link to='/admin-profile' className='nav-links' onClick={closeMobileMenu}>

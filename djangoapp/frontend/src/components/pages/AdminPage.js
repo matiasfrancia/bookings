@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { formatInTimeZone } from 'date-fns-tz';
-import { isSameDay, convertStringstoDates } from '../../utils/functions/date_management';
+import { isSameDay, convertStringstoDates, getBlocksInfo } from '../../utils/functions/date_management';
 import { UncontrolledAccordion } from 'reactstrap';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -14,15 +14,11 @@ function AdminPage() {
 
     const [isSelectedDayBlocked, setIsSelectedDayBlocked] = useState(false);
     const [selectedDay, setSelectedDay] = useState(null);
-    const [selectedBlock, setSelectedBlock] = useState("");
     const [disabledBlocks, setDisabledBlocks] = useState([]);
     const [bookings, setBookings] = useState([]);
     const [blocks, setBlocks] = useState([]);
     
     const [loading, setLoading] = useState(true);
-    // sirve para mostrar mensajes temporales en pantalla luego de realizar alguna acción
-    const [message, setMessage] = useState("");
-    const [alertMsg, setAlertMsg] = useState("");
     
     async function getDisabledDates(date = null) {
         
@@ -150,29 +146,9 @@ function AdminPage() {
         .catch(e => console.error("Ha ocurrido un error al buscar la reserva: ", e));
     }
 
-    let getBlocksInfo = () => {
-
-        let blocks = [{"block": "8:00-9:50", "active": true}, {"block": "10:00-11:50", "active": true}, 
-        {"block": "12:00-13:50", "active": true}, {"block": "16:00-17:50", "active": true}];
-
-        let auxList = disabledBlocks.map(disabledBlock => disabledBlock.block);
-
-        for(let i = 0; i < blocks.length; i++) {
-            if(auxList.includes(blocks[i].block)) {
-                blocks[i].active = false;
-            }
-        }
-
-        return blocks;
-    }
-
     let handleCalendarChange = (value) => {
         setSelectedDay(value);
         getDisabledBlocks(value);
-    }
-
-    let handleDisabledBlockChange = (e) => {
-        setSelectedBlock(e.target.value);
     }
 
     let checkIsSelectedDayBlocked = () => {
@@ -202,7 +178,7 @@ function AdminPage() {
 
     useEffect(() => {
         console.log("Disabled blocks: ", disabledBlocks);
-        setBlocks(getBlocksInfo());
+        setBlocks(getBlocksInfo(disabledBlocks));
     }, [disabledBlocks]);
     
     useEffect(() => {

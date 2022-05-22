@@ -1,5 +1,7 @@
 import json
-from django.shortcuts import get_object_or_404, render
+import random
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect, render
 from matplotlib.font_manager import json_dump
 from rest_framework import generics, status
 from django.utils.dateparse import parse_date
@@ -18,6 +20,9 @@ from .serializers import (
 from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+from transbank.error.transbank_error import TransbankError
+from transbank.webpay.webpay_plus.transaction import Transaction
 
 
 # ============================================ Auth ============================================
@@ -50,14 +55,64 @@ def getRoutes(request):
 
 
 @api_view(['POST'])
+def webpay_plus_create(request):
+
+    print("Webpay Plus Transaction.create", request.data)
+    buy_order = request.data.get("code")
+    session_id = str(random.randrange(1000000, 99999999))
+    amount = request.data.get("amount")
+    return_url = 'http://localhost:8000/api/webpay-plus/commit/'
+
+    # create_request = {
+    #     "buy_order": buy_order,
+    #     "session_id": session_id,
+    #     "amount": amount,
+    #     "return_url": return_url
+    # }
+
+    response = (Transaction()).create(buy_order, session_id, amount, return_url)
+
+    print(response)
+
+    return Response(data=response)
+
+
+@api_view(['GET'])
+def webpay_plus_commit(request):
+
+    print("Request query params:", request.query_params)
+
+    token = request.query_params.get("token_ws")
+    print("commit for token_ws: {}".format(token))
+
+    response = (Transaction()).commit(token=token)
+    print("response: {}".format(response))
+
+    url = 'http://localhost:8000/api/create-payment/'
+    data = response
+    data['token'] = token
+    data['card_number'] = response['card_detail']['card_number']
+
+    print("\n\nData:\n\n", data)
+
+    payment = requests.post(url, data=data)
+
+    print("\n\nResultado create payment:\n\n", payment)
+
+    # asociar payment con booking a traves de la foreign key
+
+    return HttpResponseRedirect(redirect_to='http://localhost:8000/')
+
+
+@api_view(['POST'])
 def create_payment(request):
 
-    print(request.data)
+    print("\n\nCreate payment input:\n\n", request.data)
 
     payment = PaymentSerializer(data=request.data)
 
     validations = [
-        validate_create_payment(int(request.data.get('total'))),
+        validate_create_payment(int(request.data.get('amount'))),
     ]
     
     error_msg = "\n".join(["- " + msg for valid, msg in validations if not valid])
@@ -67,12 +122,17 @@ def create_payment(request):
         return Response(data={'error_msg': error_msg}, status=status.HTTP_400_BAD_REQUEST)
 
     if payment.is_valid():
-        total = payment.data.get('total')
+        
+        print("\n\nPayment is valid:\n\n")
 
-        payment = Payment.objects.create(total=total)
-        print(PaymentSerializer(payment).data)
+        payment.save()
+        
+        print("\n\nPayment is created:\n\n", payment)
+        # print(PaymentSerializer(payment).data)
             
         return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+
+    print("\n\n Payment serializer errors:\n\n", payment.errors)
 
     return Response(data="There was an error in the creation of the payment object", status=status.HTTP_400_BAD_REQUEST)
 
@@ -299,14 +359,6 @@ def create_booking(request):
         cellphone = booking.data.get('cellphone')
         document_type = booking.data.get('document_type')
         document_number = booking.data.get('document_number')
-
-        payment = requests.post(
-            'http://localhost:8000/api/create-payment/', 
-            data={
-                "total": request.data.get('price')
-            }
-        )
-        payment = Payment(**json.loads(payment.text))
         
         disabled_blocks = DisabledBlocks(day=booking_date, block=block)
         disabled_blocks.save()
@@ -325,8 +377,6 @@ def create_booking(request):
             cellphone=cellphone,
             document_type=document_type,
             document_number=document_number,
-
-            payment=payment
         )
         booking.save()
         

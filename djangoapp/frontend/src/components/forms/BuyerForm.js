@@ -1,17 +1,25 @@
-import React from 'react'
-// import { Form, FormGroup, Label, Input, FormFeedback, FormText } from 'reactstrap'
-import '../../../static/css/Forms.css'
-import useForm from './../hooks/useFormBuyer'
-import validateBuyer from './validateInfoBuyer'
+import React from 'react';
+import '../../../static/css/Forms.css';
+import { validationsBuyer as validationsFunction } from './validations';
+import {Controller, useForm} from 'react-hook-form';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 function BuyerForm({ submitForm }) {
- 
-    const {handleChange, values, handleSubmit, errors} = useForm(submitForm, validateBuyer);
+
+    const { getValues, register, control, handleSubmit, formState: { errors } } = useForm();
+
+    console.log("Errors:", errors);
+    
+    const onSubmit = data => {
+        console.log(data);
+        submitForm(data);
+    };
 
     return (
         <div className='form__container'>
             <p className='form__title'>Ingrese sus datos</p>
-            <form className='form' onSubmit={handleSubmit}>
+            <form className='form' onSubmit={handleSubmit(onSubmit)}>
                 <div className='form__inputs'>
                     <label htmlFor='name' className='form__label'>
                         Nombre
@@ -21,11 +29,11 @@ function BuyerForm({ submitForm }) {
                         type='text' 
                         name='name'
                         className='form__input'
-                        placeholder=''
-                        value={values.name}
-                        onChange={handleChange}
+                        {...register("name", {
+                            validate: validationsFunction(getValues)["name"],
+                        })}
                     />
-                    {errors.name && <p className='form__error__text'>{errors.name}</p>}
+                    {errors.name?.message}
                 </div>
                 <div className='form__inputs'>
                     <label htmlFor='lastname' className='form__label'>
@@ -36,11 +44,11 @@ function BuyerForm({ submitForm }) {
                         type='text' 
                         name='lastname'
                         className='form__input'
-                        placeholder=''
-                        value={values.lastname}
-                        onChange={handleChange}
+                        {...register("lastname", {
+                            validate: validationsFunction(getValues)["lastname"],
+                        })}
                     />
-                    {errors.lastname && <p className='form__error__text'>{errors.lastname}</p>}
+                    {errors.lastname?.message}
                 </div>
                 <div className='form__inputs'>
                     <label htmlFor='email' className='form__label'>
@@ -52,27 +60,35 @@ function BuyerForm({ submitForm }) {
                         name='email'
                         className='form__input'
                         placeholder=''
-                        value={values.email}
-                        onChange={handleChange}
+                        {...register("email", {
+                            validate: validationsFunction(getValues)["email"],
+                        })}
                     />
-                    {errors.email && <p className='form__error__text'>{errors.email}</p>}
+                    {errors.email?.message}
                 </div>
                 <div className='form__inputs'>
                     <label htmlFor='cellphone' className='form__label'>
                         Celular
                     </label>
-                    <input
-                        id='cellphone'
-                        type='text' 
-                        name='cellphone'
-                        className='form__input'
-                        placeholder=''
-                        value={values.cellphone}
-                        onChange={handleChange}
+                    <Controller
+                        name="cellphone"
+                        control={control}
+                        rules={{
+                            validate: (value) => isValidPhoneNumber(value) || (
+                            <p>El formato del celular es incorrecto</p>)
+                        }}
+                        render={({ field: { onChange, value } }) => (
+                            <PhoneInput
+                            value={value}
+                            onChange={onChange}
+                            defaultCountry="CL"
+                            id="cellphone"
+                            />
+                        )}
                     />
-                    {errors.cellphone && <p className='form__error__text'>{errors.cellphone}</p>}
+                    {errors.cellphone?.message}
                 </div>
-                <div className='form__inputs' onChange={handleChange}>
+                <div className='form__inputs'>
                     <label htmlFor='documentType' className='form__label'>
                         Tipo de documento
                     </label>
@@ -83,6 +99,10 @@ function BuyerForm({ submitForm }) {
                             name="documentType"
                             value="rut"
                             key="rut"
+                            {...register("documentType", {
+                                validate: validationsFunction(getValues)["documentType"],
+                            })}
+                            defaultChecked
                         />
                         Rut
                         <input
@@ -92,9 +112,12 @@ function BuyerForm({ submitForm }) {
                             name="documentType"
                             key="pasaporte"
                             value="pasaporte"
+                            {...register("documentType", {
+                                validate: validationsFunction(getValues)["documentType"],
+                            })}
                         />
                         Pasaporte
-                    {errors.documentType && <p className='form__error__text'>{errors.documentType}</p>}
+                    {errors.documentType?.message}
                 </div>
                 <div className='form__inputs'>
                     <label htmlFor='documentNumber' className='form__label'>
@@ -106,10 +129,11 @@ function BuyerForm({ submitForm }) {
                         name='documentNumber'
                         className='form__input'
                         placeholder=''
-                        value={values.documentNumber}
-                        onChange={handleChange}
+                        {...register("documentNumber", {
+                            validate: validationsFunction(getValues)["documentNumber"],
+                        })}
                     />
-                    {errors.documentNumber && <p className='form__error__text'>{errors.documentNumber}</p>}
+                    {errors.documentNumber?.message}
                 </div>
                 <button className='form__input__btn' type='submit'>
                     Enviar

@@ -35,22 +35,28 @@ const useFormBooking = (callback, validate) => {
         setAvailableBlocks(res);
     }
 
-    const getDisabledBlocks = async (day) => {
-
-        try {
-  
-          let res = await fetch("http://localhost:8000/api/disabled-blocks?day=" + formatInTimeZone(day, 'America/Santiago', 'yyyy-MM-dd'), {
+    async function getDisabledBlocks(day) {
+        
+        await fetch("http://localhost:8000/api/disabled-blocks/?day=" + formatInTimeZone(day, 'America/Santiago', 'yyyy-MM-dd'), {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-          }).then(response => {
-              return response.status !== 404 ? response.json() : []
-            })
-          .then(response => setDisabledBlocks(response))
-          .catch(error => console.log(error));
-          
-        } catch (err) {
-          console.log(err);
-        }
+        }).then( response => {
+            if(response.status !== 200 && response.status !== 204) {
+                throw new Error(`HTTP error: ${response.status}`);
+            }
+            if(response.status === 204) {
+                console.log("Paso por el if con 204");
+                return [];
+            }
+            return response.json();
+        })
+        .then(json => {
+            console.log("Blocks: ", json);
+            if(json !== null && json !== []) {
+                setDisabledBlocks(json);
+            }
+        })
+        .catch(e => console.error("Ha ocurrido un error al conseguir los 'disabled blocks': ", e));
     }
 
     const handleChange = e => {
