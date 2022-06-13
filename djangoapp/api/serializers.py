@@ -1,6 +1,11 @@
 from rest_framework import serializers
 
-from .models import Booking, DisabledBlocks, DisabledDays, Payment
+from .models import TempBooking, Booking, DisabledBlocks, DisabledDays, Payment
+
+class TempBookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TempBooking
+        fields = '__all__'
 
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:

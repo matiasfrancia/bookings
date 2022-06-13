@@ -11,6 +11,10 @@ urlpatterns = [
     path('bookings/', views.view_bookings, name="all-bookings"),
     path('bookings/update/<int:pk>', views.update_booking, name="update-booking"),
     path('bookings/delete/', views.delete_booking, name="delete-booking"),
+    
+    path('create-temp-booking/', views.create_temp_booking, name="create-temp-booking"),
+    path('temp-bookings/', views.view_temp_bookings, name="all-temp-bookings"),
+    path('temp-bookings/delete/', views.delete_temp_booking, name="delete-temp-booking"),
 
     path('create-day/', views.create_day, name="create-day"),
     path('disabled-days/', views.view_days, name="all-days"),
@@ -33,4 +37,6 @@ urlpatterns = [
 
     path('webpay-plus/create/', views.webpay_plus_create, name="webpay-plus-create"),
     path('webpay-plus/commit/', views.webpay_plus_commit, name="webpay-plus-commit"),
+    path('webpay-plus/refund/', views.webpay_plus_refund, name="webpay-plus-refund"),
+    path('webpay-plus/status/', views.webpay_plus_status, name="webpay-plus-status"),
 ]

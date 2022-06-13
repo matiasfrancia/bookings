@@ -40,8 +40,6 @@ function BookingForm({ submitForm }) {
         console.log(data);
         submitForm(data);
     };
-
-    // TODO: obtener los bloques desde variables de configuración
     
     
     const dateToString = (day) => formatInTimeZone(day, 'America/Santiago', 'yyyy-MM-dd');
@@ -161,6 +159,8 @@ function BookingForm({ submitForm }) {
             getDisabledBlocks(date);
         }
     }, [date]);
+
+    // TODO: inhabilitar un día en caso de que no hayan bloques disponibles en él
 
     return (
 

@@ -29,11 +29,15 @@ function AdminPage() {
             if(response.status !== 200 && response.status !== 204) {
                 throw new Error(`HTTP error: ${response.status}`);
             }
+            if(response.status === 204) {
+                console.log("Paso por el if con 204");
+                return [];
+            }
             return response.json();
         })
         .then(json => {
             console.log("Text: ", json);
-            if(json !== null) {
+            if(json !== null && json !== []) {
                 setDisabledDates(convertStringstoDates(json));
             }
             else {
@@ -220,7 +224,6 @@ function AdminPage() {
 
                     let booking_data = bookings.filter(booking => booking.block === block.block);
                     booking_data = booking_data ? booking_data[0] : [];
-                    console.log("Block active: ", block.active);
 
                     return (
                         <AccordionBlockItem 

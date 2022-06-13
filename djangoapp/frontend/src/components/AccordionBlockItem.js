@@ -1,14 +1,39 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import { AccordionBody, AccordionHeader, AccordionItem, Table } from 'reactstrap';
 import { formatInTimeZone } from 'date-fns-tz';
 
 function AccordionBlockItem({block, index, booking, active, getDisabledBlocks, selectedDay, getBookings}) {
+
+    const [payment, setPayment] = useState(null);
 
     console.log("Booking in accordion: ", active);
     let formatter = new Intl.NumberFormat('es-CL', {
         style: 'currency',
         currency: 'CLP'
     });
+
+    async function getPayment(order_code) {
+        
+        await fetch("http://localhost:8000/api/payments/?buy_order=" + order_code, {
+            method: "GET",
+            headers: {"Content-Type": "application/json"},
+        }).then( response => {
+            if(response.status !== 200 && response.status !== 204) {
+                throw new Error(`HTTP error: ${response.status}`);
+            }
+            if(response.status === 204) {
+                console.log("Paso por el if con 204 (payment)");
+                return null;
+            }
+            return response.json();
+        })
+        .then(json => {
+            if(json !== null && json !== undefined) {
+                setPayment(json[0]);
+            }
+        })
+        .catch(e => console.error("Ha ocurrido un error al buscar el pago de la reserva: ", e));
+    }
 
     async function createDisabledBlock() {
 
@@ -71,8 +96,7 @@ function AccordionBlockItem({block, index, booking, active, getDisabledBlocks, s
 
     async function deleteBooking() {
 
-        await fetch("http://localhost:8000/api/bookings/delete/?day="
-            + formatInTimeZone(selectedDay, 'America/Santiago', 'yyyy-MM-dd') + "&block=" + block, {
+        await fetch("http://localhost:8000/api/bookings/delete/?code=" + booking['code'], {
             method: "DELETE",
             headers: {"Content-Type": "application/json"},
         }).then(response => {
@@ -99,15 +123,26 @@ function AccordionBlockItem({block, index, booking, active, getDisabledBlocks, s
     }
 
     let handleBookingDelete = () => {
-        if (confirm("¿Está seguro que desea eliminar la reserva? Esta acción no se puede deshacer, " +
-            "si aún así desea hacerlo asegúrese de informarle al cliente")) {
+        if (confirm("¿Está seguro que desea eliminar la reserva? Se realizará automáticamente un reembolso "
+            + "por el valor total de la compra de los tickets.\n\n"
+            + "Si desea continuar de todas formas presione 'Aceptar', y "
+            + "asegúrese de informarle al cliente que canceló la reserva.")) {
             deleteBooking();
             console.log("Se eliminó la reserva");
 
           } else {
             console.log("No se eliminó la reserva");
           }
-    }    
+    }
+    
+    useEffect(() => {
+        if(booking !== undefined && booking !== null) {
+            getPayment(booking.code);
+        }
+    }, [booking]);
+
+    useEffect(() => {
+        console.log("Payment: ", payment)}, [payment]);
 
     return (
         <AccordionItem key={index}>
@@ -172,19 +207,54 @@ function AccordionBlockItem({block, index, booking, active, getDisabledBlocks, s
                     </tr>
                 </tbody>
                 </Table>
+
+                {payment == null 
+                    ? <p className='error_text'>El pago aún no ha sido realizado por el cliente</p>
+                    : (<div>
+                    <p className='subsection__title'>Datos del pago</p><Table
+                        bordered
+                        hover
+                        responsive
+                        size=""
+                    >
+                    <tbody>
+                        <tr>
+                            <td>Código de reserva asociado al pago</td>
+                            <td>{payment.buy_order}</td>
+                        </tr>
+                        <tr>
+                            <td>Valor pago</td>
+                            <td>{formatter.format(payment.amount)}</td>
+                        </tr>
+                        <tr>
+                            <td>Estado del pago</td>
+                            <td>{payment.status}</td>
+                        </tr>
+                        <tr>
+                            <td>ID de sesión</td>
+                            <td>{payment.session_id}</td>
+                        </tr>
+                        <tr>
+                            <td>Número de la tarjeta</td>
+                            <td>{payment.card_number}</td>
+                        </tr>
+                        <tr>
+                            <td>Fecha de contabilidad</td>
+                            <td>{payment.accounting_date}</td>
+                        </tr>
+                    </tbody>
+                </Table></div>)}
                 </div>
                 : (active
                     ? 'El bloque se encuentra disponible'
                     : 'El bloque se encuentra bloqueado')}
 
-                {/* TODO: dejar funcional el botón de crear reserva */}
-
                 {!booking ? <div className='mg_tp_1'>
 
                     {active
                     ? <>
-                        <p>Crear reserva</p>
-                        <button className='create btn mg_bt_2'><i className={'fas fa-plus'} /></button>
+                        {/* <p>Crear reserva</p>
+                        <button className='create btn mg_bt_2'><i className={'fas fa-plus'} /></button> */}
                         <p>Deshabilitar bloque:</p>
                         <button className='disable btn mg_bt_2' onClick={createDisabledBlock}><i className={'fas fa-lock'} /></button>
                     </>

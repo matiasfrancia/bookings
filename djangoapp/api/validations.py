@@ -17,7 +17,7 @@ def validate_create_booking_block(block):
     return (True, "El formato del bloque es correcto")
 
 def validate_create_booking_visitants(visitants, inf_bound):
-    if visitants < inf_bound:
+    if int(visitants) < inf_bound:
         return (False, "La cantidad de visitantes es menor a la permitida, el mínimo por reserva son " + str(inf_bound) + " vistantes")
     return (True, "La cantidad de visitantes de esta reserva es correcta")
 
